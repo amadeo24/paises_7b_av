@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>CRUD de Países</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f2f2f2;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form {
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        input {
+            padding: 10px;
+            width: 300px;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin-left: 5px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            background-color: white;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        th {
+            background-color: #333;
+            color: white;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <h1>CRUD de Países</h1>
+
+    <form id="formPais">
+
+        <input
+            type="hidden"
+            id="pais_id"
+        >
+
+        <input
+            type="text"
+            id="pais_descripcion"
+            placeholder="Nombre del país"
+            required
+        >
+
+        <button type="submit">
+            Guardar
+        </button>
+
+        <button
+            type="button"
+            onclick="cancelarEdicion()"
+        >
+            Cancelar
+        </button>
+
+    </form>
+
+    <table>
+
+        <thead>
+
+            <tr>
+                <th>ID</th>
+                <th>País</th>
+                <th>Acciones</th>
+            </tr>
+
+        </thead>
+
+        <tbody id="tablaPaises">
+
+        </tbody>
+
+    </table>
+
+
+    <script>
+
+        const form =
+            document.getElementById("formPais");
+
+        const paisId =
+            document.getElementById("pais_id");
+
+        const paisDescripcion =
+            document.getElementById("pais_descripcion");
+
+        const tablaPaises =
+            document.getElementById("tablaPaises");
+ async function cargarPaises() {
+
+            const respuesta =
+                await fetch("/api/paises");
+
+            const paises =
+                await respuesta.json();
+
+            tablaPaises.innerHTML = "";
+
+            paises.forEach(pais => {
+
+                tablaPaises.innerHTML += `
+
+                    <tr>
+
+                        <td>
+                            ${pais.pais_id}
+                        </td>
+
+                        <td>
+                            ${pais.pais_descripcion}
+                        </td>
+
+                        <td>
+
+                            <button
+                                onclick="editarPais(
+                                    ${pais.pais_id},
+                                    '${pais.pais_descripcion}'
+                                )"
+                            >
+                                Editar
+                            </button>
+
+                            <button
+                                onclick="eliminarPais(
+                                    ${pais.pais_id}
+                                )"
+                            >
+                                Eliminar
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                `;
+
+            });
+
+        }
+  form.addEventListener(
+            "submit",
+            async function(event) {
+
+                event.preventDefault();
+
+                const id = paisId.value;
+
+                const descripcion =
+                    paisDescripcion.value;
+
+
+                if (id === "") {
+
+                    // CREAR
+
+                    await fetch("/api/paises", {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            pais_descripcion:
+                                descripcion
+                        })
+
+                    });
+
+                } else {
+
+                    // MODIFICAR
+
+                    await fetch(
+                        `/api/paises/${id}`,
+                        {
+
+                            method: "PUT",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                pais_descripcion:
+                                    descripcion
+                            })
+
+                        }
+                    );
+
+                }
+
+                cancelarEdicion();
+
+                cargarPaises();
+
+            }
+        );
+  async function eliminarPais(id) {
+
+            if (
+                !confirm(
+                    "¿Desea eliminar este país?"
+                )
+            ) {
+                return;
+            }
+
+            const respuesta =
+                await fetch(
+                    `/api/paises/${id}`,
+                    {
+                        method: "DELETE"
+                    }
+                );
+
+            const resultado =
+                await respuesta.json();
+
+            if (!respuesta.ok) {
+
+                alert(resultado.error);
+
+                return;
+            }
+
+            cargarPaises();
+
+        }
+         function cancelarEdicion() {
+
+            paisId.value = "";
+
+            paisDescripcion.value = "";
+
+        }
+
+        cargarPaises();
+
+    </script>
+
+</body>
+
+</html>
+
