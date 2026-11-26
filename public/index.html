@@ -1,287 +1,289 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
-    <title>CRUD de Países</title>
-
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Países | Gestión</title>
     <style>
+        :root {
+            color-scheme: light;
+            --ink: #1d2925;
+            --muted: #64716b;
+            --paper: #f5f6f1;
+            --surface: #fff;
+            --line: #dce2dc;
+            --green: #245b46;
+            --green-dark: #194533;
+            --coral: #b94a39;
+            --gold: #d5a33c;
+        }
+
+        * { box-sizing: border-box; }
 
         body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f2f2f2;
+            margin: 0;
+            color: var(--ink);
+            background: var(--paper);
+            font-family: "Trebuchet MS", sans-serif;
+        }
+
+        header {
+            padding: 28px max(24px, calc((100% - 980px) / 2));
+            color: #fff;
+            background: var(--green);
+            border-bottom: 5px solid var(--gold);
+        }
+
+        header p {
+            margin: 0 0 6px;
+            color: #d8e6dc;
+            font-size: 13px;
+            text-transform: uppercase;
         }
 
         h1 {
-            color: #333;
+            margin: 0;
+            font-family: Georgia, serif;
+            font-size: 30px;
+            font-weight: 500;
         }
 
+        main {
+            width: min(980px, calc(100% - 32px));
+            margin: 32px auto;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 20px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        h2 {
+            margin: 0 0 5px;
+            font-family: Georgia, serif;
+            font-size: 23px;
+            font-weight: 500;
+        }
+
+        .hint, #status {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        #status { text-align: right; }
+
         form {
-            background-color: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
+            display: flex;
+            align-items: end;
+            gap: 12px;
+            padding: 20px 0;
+        }
+
+        label {
+            display: grid;
+            flex: 1;
+            gap: 7px;
+            color: var(--muted);
+            font-size: 13px;
         }
 
         input {
-            padding: 10px;
-            width: 300px;
+            width: 100%;
+            min-height: 42px;
+            padding: 9px 11px;
+            color: var(--ink);
+            background: var(--surface);
+            border: 1px solid #aebbb2;
+            border-radius: 3px;
+            font: inherit;
         }
 
+        input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+
         button {
-            padding: 10px 15px;
-            margin-left: 5px;
+            min-height: 40px;
+            padding: 8px 14px;
+            color: var(--green-dark);
+            background: transparent;
+            border: 1px solid #9eafa3;
+            border-radius: 3px;
+            font: inherit;
             cursor: pointer;
         }
 
-        table {
-            width: 100%;
-            background-color: white;
-            border-collapse: collapse;
-        }
+        button:hover { background: #e8eee8; }
+        button.primary { color: #fff; background: var(--green); border-color: var(--green); }
+        button.primary:hover { background: var(--green-dark); }
+        button.danger { color: var(--coral); border-color: #d9b2ab; }
 
-        th,
-        td {
-            border: 1px solid #ccc;
-            padding: 10px;
-        }
+        .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); }
 
-        th {
-            background-color: #333;
-            color: white;
-        }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid var(--line); }
+        th { color: var(--muted); background: #edf1eb; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        tr:last-child td { border-bottom: 0; }
+        td:first-child { width: 90px; color: var(--muted); font-variant-numeric: tabular-nums; }
+        td.actions { width: 180px; text-align: right; white-space: nowrap; }
+        td.actions button + button { margin-left: 6px; }
+        .empty { padding: 28px; color: var(--muted); text-align: center; }
 
+        @media (max-width: 560px) {
+            header { padding: 22px 18px; }
+            main { margin-top: 22px; }
+            .toolbar { align-items: start; flex-direction: column; }
+            #status { text-align: left; }
+            form { align-items: stretch; flex-wrap: wrap; }
+            form label { flex-basis: 100%; }
+            td, th { padding: 10px; }
+            td.actions { width: auto; }
+            td.actions button { padding: 7px 9px; }
+        }
     </style>
-
 </head>
-
 <body>
+    <header>
+        <p>Base de datos · Paises_7B</p>
+        <h1>Países</h1>
+    </header>
+    <main>
+        <section aria-labelledby="section-title">
+            <div class="toolbar">
+                <div>
+                    <h2 id="section-title">Listado de países</h2>
+                    <p class="hint">Crear, editar o eliminar registros.</p>
+                </div>
+                <p id="status" role="status" aria-live="polite"></p>
+            </div>
 
-    <h1>CRUD de Países</h1>
+            <form id="country-form">
+                <input type="hidden" id="pais_id">
+                <label for="pais_descripcion">
+                    Nombre del país
+                    <input id="pais_descripcion" name="pais_descripcion" maxlength="50" required autocomplete="off">
+                </label>
+                <button class="primary" id="save-button" type="submit">Agregar país</button>
+                <button id="cancel-button" type="button" hidden>Cancelar</button>
+            </form>
 
-    <form id="formPais">
-
-        <input
-            type="hidden"
-            id="pais_id"
-        >
-
-        <input
-            type="text"
-            id="pais_descripcion"
-            placeholder="Nombre del país"
-            required
-        >
-
-        <button type="submit">
-            Guardar
-        </button>
-
-        <button
-            type="button"
-            onclick="cancelarEdicion()"
-        >
-            Cancelar
-        </button>
-
-    </form>
-
-    <table>
-
-        <thead>
-
-            <tr>
-                <th>ID</th>
-                <th>País</th>
-                <th>Acciones</th>
-            </tr>
-
-        </thead>
-
-        <tbody id="tablaPaises">
-
-        </tbody>
-
-    </table>
-
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>País</th><th></th></tr>
+                    </thead>
+                    <tbody id="country-list"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
 
     <script>
+        const form = document.getElementById("country-form");
+        const idInput = document.getElementById("pais_id");
+        const descriptionInput = document.getElementById("pais_descripcion");
+        const list = document.getElementById("country-list");
+        const status = document.getElementById("status");
+        const saveButton = document.getElementById("save-button");
+        const cancelButton = document.getElementById("cancel-button");
 
-        const form =
-            document.getElementById("formPais");
-
-        const paisId =
-            document.getElementById("pais_id");
-
-        const paisDescripcion =
-            document.getElementById("pais_descripcion");
-
-        const tablaPaises =
-            document.getElementById("tablaPaises");
- async function cargarPaises() {
-
-            const respuesta =
-                await fetch("/api/paises");
-
-            const paises =
-                await respuesta.json();
-
-            tablaPaises.innerHTML = "";
-
-            paises.forEach(pais => {
-
-                tablaPaises.innerHTML += `
-
-                    <tr>
-
-                        <td>
-                            ${pais.pais_id}
-                        </td>
-
-                        <td>
-                            ${pais.pais_descripcion}
-                        </td>
-
-                        <td>
-
-                            <button
-                                onclick="editarPais(
-                                    ${pais.pais_id},
-                                    '${pais.pais_descripcion}'
-                                )"
-                            >
-                                Editar
-                            </button>
-
-                            <button
-                                onclick="eliminarPais(
-                                    ${pais.pais_id}
-                                )"
-                            >
-                                Eliminar
-                            </button>
-
-                        </td>
-
-                    </tr>
-
-                `;
-
-            });
-
+        async function apiRequest(url, options) {
+            const response = await fetch(url, options);
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "No se pudo completar la operación.");
+            return result;
         }
-  form.addEventListener(
-            "submit",
-            async function(event) {
 
-                event.preventDefault();
+        function makeAction(label, className, action) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = label;
+            if (className) button.className = className;
+            button.addEventListener("click", action);
+            return button;
+        }
 
-                const id = paisId.value;
-
-                const descripcion =
-                    paisDescripcion.value;
-
-
-                if (id === "") {
-
-                    // CREAR
-
-                    await fetch("/api/paises", {
-
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body: JSON.stringify({
-                            pais_descripcion:
-                                descripcion
-                        })
-
-                    });
-
-                } else {
-
-                    // MODIFICAR
-
-                    await fetch(
-                        `/api/paises/${id}`,
-                        {
-
-                            method: "PUT",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body: JSON.stringify({
-                                pais_descripcion:
-                                    descripcion
-                            })
-
-                        }
-                    );
-
+        async function loadCountries() {
+            status.textContent = "Cargando…";
+            try {
+                const countries = await apiRequest("/api/paises");
+                list.replaceChildren();
+                if (countries.length === 0) {
+                    const row = list.insertRow();
+                    const cell = row.insertCell();
+                    cell.colSpan = 3;
+                    cell.className = "empty";
+                    cell.textContent = "Todavía no hay países registrados.";
                 }
 
-                cancelarEdicion();
-
-                cargarPaises();
-
+                for (const country of countries) {
+                    const row = list.insertRow();
+                    row.insertCell().textContent = country.pais_id;
+                    row.insertCell().textContent = country.pais_descripcion;
+                    const actions = row.insertCell();
+                    actions.className = "actions";
+                    actions.append(
+                        makeAction("Editar", "", () => beginEdit(country)),
+                        makeAction("Eliminar", "danger", () => deleteCountry(country.pais_id))
+                    );
+                }
+                status.textContent = `${countries.length} registros`;
+            } catch (error) {
+                status.textContent = error.message;
             }
-        );
-  async function eliminarPais(id) {
-
-            if (
-                !confirm(
-                    "¿Desea eliminar este país?"
-                )
-            ) {
-                return;
-            }
-
-            const respuesta =
-                await fetch(
-                    `/api/paises/${id}`,
-                    {
-                        method: "DELETE"
-                    }
-                );
-
-            const resultado =
-                await respuesta.json();
-
-            if (!respuesta.ok) {
-
-                alert(resultado.error);
-
-                return;
-            }
-
-            cargarPaises();
-
-        }
-         function cancelarEdicion() {
-
-            paisId.value = "";
-
-            paisDescripcion.value = "";
-
         }
 
-        cargarPaises();
+        function beginEdit(country) {
+            idInput.value = country.pais_id;
+            descriptionInput.value = country.pais_descripcion;
+            saveButton.textContent = "Guardar cambios";
+            cancelButton.hidden = false;
+            descriptionInput.focus();
+        }
 
+        function cancelEdit() {
+            form.reset();
+            idInput.value = "";
+            saveButton.textContent = "Agregar país";
+            cancelButton.hidden = true;
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const description = descriptionInput.value.trim();
+            const id = idInput.value;
+            const url = id ? `/api/paises/${id}` : "/api/paises";
+            const method = id ? "PUT" : "POST";
+
+            try {
+                await apiRequest(url, {
+                    method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pais_descripcion: description })
+                });
+                cancelEdit();
+                await loadCountries();
+            } catch (error) {
+                status.textContent = error.message;
+            }
+        });
+
+        cancelButton.addEventListener("click", cancelEdit);
+
+        async function deleteCountry(id) {
+            if (!window.confirm("¿Eliminar este país?")) return;
+            try {
+                await apiRequest(`/api/paises/${id}`, { method: "DELETE" });
+                await loadCountries();
+            } catch (error) {
+                status.textContent = error.message;
+            }
+        }
+
+        loadCountries();
     </script>
-
 </body>
-
 </html>
-

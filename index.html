@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD de Países</title>
+    <style>
+        body {
+            margin: 40px;
+            background-color: #f2f2f2;
+            color: #333;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 { color: #333; }
+
+        form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            background-color: white;
+        }
+
+        input {
+            box-sizing: border-box;
+            width: min(300px, 100%);
+            padding: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+
+        th {
+            color: white;
+            background-color: #333;
+        }
+
+        #estado { min-height: 1.2em; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>CRUD de Países</h1>
+        <p id="estado" role="status" aria-live="polite"></p>
+
+        <form id="formPais">
+            <input type="hidden" id="pais_id">
+            <input
+                type="text"
+                id="pais_descripcion"
+                placeholder="Nombre del país"
+                maxlength="50"
+                aria-label="Nombre del país"
+                required
+            >
+            <button type="submit" id="guardar">Guardar</button>
+            <button type="button" id="cancelar" hidden>Cancelar</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>País</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaPaises"></tbody>
+        </table>
+    </main>
+
+    <script>
+        const form = document.getElementById("formPais");
+        const paisId = document.getElementById("pais_id");
+        const paisDescripcion = document.getElementById("pais_descripcion");
+        const tablaPaises = document.getElementById("tablaPaises");
+        const estado = document.getElementById("estado");
+        const guardar = document.getElementById("guardar");
+        const cancelar = document.getElementById("cancelar");
+
+        async function apiRequest(url, options = {}) {
+            const respuesta = await fetch(url, options);
+            const tipo = respuesta.headers.get("content-type") || "";
+            const resultado = tipo.includes("application/json")
+                ? await respuesta.json()
+                : null;
+
+            if (!respuesta.ok) {
+                throw new Error(resultado?.error || `Error del servidor (${respuesta.status}).`);
+            }
+
+            return resultado;
+        }
+
+        function crearBoton(texto, accion) {
+            const boton = document.createElement("button");
+            boton.type = "button";
+            boton.textContent = texto;
+            boton.addEventListener("click", accion);
+            return boton;
+        }
+
+        async function cargarPaises() {
+            estado.textContent = "Cargando países…";
+
+            try {
+                const paises = await apiRequest("/api/paises");
+                if (!Array.isArray(paises)) {
+                    throw new Error("El servidor devolvió una respuesta inesperada.");
+                }
+
+                tablaPaises.replaceChildren();
+                for (const pais of paises) {
+                    const fila = tablaPaises.insertRow();
+                    fila.insertCell().textContent = pais.pais_id;
+                    fila.insertCell().textContent = pais.pais_descripcion;
+
+                    const acciones = fila.insertCell();
+                    acciones.append(
+                        crearBoton("Editar", () => editarPais(pais)),
+                        crearBoton("Eliminar", () => eliminarPais(pais.pais_id))
+                    );
+                }
+
+                estado.textContent = `${paises.length} país(es)`;
+            } catch (error) {
+                estado.textContent = `No se pudieron cargar los países: ${error.message}`;
+            }
+        }
+
+        function editarPais(pais) {
+            paisId.value = pais.pais_id;
+            paisDescripcion.value = pais.pais_descripcion;
+            guardar.textContent = "Guardar cambios";
+            cancelar.hidden = false;
+            paisDescripcion.focus();
+        }
+
+        function cancelarEdicion() {
+            form.reset();
+            paisId.value = "";
+            guardar.textContent = "Guardar";
+            cancelar.hidden = true;
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const descripcion = paisDescripcion.value.trim();
+
+            if (!descripcion) {
+                estado.textContent = "El nombre del país es obligatorio.";
+                paisDescripcion.focus();
+                return;
+            }
+
+            const id = paisId.value;
+            const url = id ? `/api/paises/${id}` : "/api/paises";
+            const method = id ? "PUT" : "POST";
+
+            try {
+                await apiRequest(url, {
+                    method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pais_descripcion: descripcion })
+                });
+                cancelarEdicion();
+                await cargarPaises();
+            } catch (error) {
+                estado.textContent = `No se pudo guardar el país: ${error.message}`;
+            }
+        });
+
+        cancelar.addEventListener("click", cancelarEdicion);
+
+        async function eliminarPais(id) {
+            if (!window.confirm("¿Desea eliminar este país?")) return;
+
+            try {
+                await apiRequest(`/api/paises/${id}`, { method: "DELETE" });
+                await cargarPaises();
+            } catch (error) {
+                estado.textContent = `No se pudo eliminar el país: ${error.message}`;
+            }
+        }
+
+        cargarPaises();
+    </script>
+</body>
+</html>

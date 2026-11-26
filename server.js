@@ -1,33 +1,42 @@
 const express = require("express");
 const mysql = require("mysql2");
+const path = require("node:path");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+
 app.use(express.json());
-app.use(express.static("public"));
-const db = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "paises_7B"
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
 });
+app.use(express.static(path.join(__dirname, "public")));
+
+// Conexión a MySQL
+const db = mysql.createConnection({
+    host: process.env.DB_HOST || "localhost",
+    user: process.env.DB_USER || "paises_user",
+    password: process.env.DB_PASSWORD || "",
+    database: process.env.DB_NAME || "Paises_7B"
+});
+
+// Conectar a MySQL
 db.connect((err) => {
     if (err) {
         console.error("Error al conectar con MySQL:", err);
         return;
     }
-root
+
     console.log("Conectado correctamente a MySQL");
 });
-app.get("/api/paises", (req, res) => {
 
+// ==========================
+// GET - Obtener todos
+// ==========================
+app.get("/api/paises", (req, res) => {
     const sql = "SELECT * FROM paises";
 
     db.query(sql, (err, resultados) => {
 
-    console.log("Conectado correctamente a MySQL");
-});
-app.get("/api/paises", (req, res) => {
         if (err) {
             console.error(err);
 
@@ -39,6 +48,10 @@ app.get("/api/paises", (req, res) => {
         res.json(resultados);
     });
 });
+
+// ==========================
+// GET - Obtener uno
+// ==========================
 app.get("/api/paises/:id", (req, res) => {
 
     const id = req.params.id;
@@ -48,6 +61,8 @@ app.get("/api/paises/:id", (req, res) => {
     db.query(sql, [id], (err, resultados) => {
 
         if (err) {
+            console.error(err);
+
             return res.status(500).json({
                 error: "Error al obtener el país"
             });
@@ -62,6 +77,10 @@ app.get("/api/paises/:id", (req, res) => {
         res.json(resultados[0]);
     });
 });
+
+// ==========================
+// POST - Crear
+// ==========================
 app.post("/api/paises", (req, res) => {
 
     const { pais_descripcion } = req.body;
@@ -93,6 +112,10 @@ app.post("/api/paises", (req, res) => {
         });
     });
 });
+
+// ==========================
+// PUT - Modificar
+// ==========================
 app.put("/api/paises/:id", (req, res) => {
 
     const id = req.params.id;
@@ -113,6 +136,8 @@ app.put("/api/paises/:id", (req, res) => {
     db.query(sql, [pais_descripcion, id], (err, resultado) => {
 
         if (err) {
+            console.error(err);
+
             return res.status(500).json({
                 error: "Error al modificar el país"
             });
@@ -129,6 +154,10 @@ app.put("/api/paises/:id", (req, res) => {
         });
     });
 });
+
+// ==========================
+// DELETE - Eliminar
+// ==========================
 app.delete("/api/paises/:id", (req, res) => {
 
     const id = req.params.id;
@@ -156,7 +185,10 @@ app.delete("/api/paises/:id", (req, res) => {
         });
     });
 });
+
+// ==========================
+// Iniciar servidor
+// ==========================
 app.listen(PORT, () => {
     console.log(`Servidor funcionando en http://localhost:${PORT}`);
 });
-password: "Ciata"
